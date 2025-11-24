@@ -115,7 +115,7 @@ mod access_registry {
             required_level: EntitlementLevel,
         ) -> bool {
             let current_level = self.get_entitlement(account);
-            Self::level_value(&current_level) >= Self::level_value(&required_level)
+            Self::level_value(current_level) >= Self::level_value(required_level)
         }
 
         /// Get the contract owner
@@ -125,7 +125,7 @@ mod access_registry {
         }
 
         /// Helper function to convert entitlement level to numeric value for comparison
-        fn level_value(level: &EntitlementLevel) -> u8 {
+        fn level_value(level: EntitlementLevel) -> u8 {
             match level {
                 EntitlementLevel::None => 0,
                 EntitlementLevel::Basic => 1,
