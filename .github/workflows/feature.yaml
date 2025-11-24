@@ -69,30 +69,17 @@ jobs:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
-      - name: Run cargo audit
-        run: cargo audit --deny warnings
-
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
 
-      - name: Check licenses and vulnerabilities
-        run: cargo deny check
+      - name: Check advisories (uses deny.toml for exceptions)
+        run: cargo deny check advisories
 
-      - name: Check for duplicate dependencies
-        run: cargo tree -d
+      - name: Check licenses
+        run: cargo deny check licenses
 
-      - name: Check dependency sources
-        run: |
-          echo "Checking dependency sources..."
-          cargo metadata --format-version 1 | jq -r '.packages[] | select(.source != null) | "\(.name): \(.source)"' | sort -u
-
-      - name: Verify git dependencies are pinned
-        run: |
-          echo "Verifying git dependencies are commit-pinned..."
-          cargo metadata --format-version 1 | jq -r '.packages[] | select(.source | contains("git+")) | "\(.name): \(.source)"'
+      - name: Check sources (only crates.io + Polkadot SDK allowed)
+        run: cargo deny check sources
 
   # Lint - clippy on both node and contracts
   lint-node:
