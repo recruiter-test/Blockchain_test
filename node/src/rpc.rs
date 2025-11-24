@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use arkavo_runtime::{AccountId, Balance, Nonce, opaque::Block};
+use arkavo_runtime::{opaque::Block, AccountId, Balance, Nonce};
 use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;

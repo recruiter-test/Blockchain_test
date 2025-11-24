@@ -26,23 +26,23 @@
 // Substrate and Polkadot dependencies
 use frame_support::{
     derive_impl, parameter_types,
-    traits::{ConstBool, ConstU8, ConstU32, ConstU64, ConstU128, VariantCountOf},
+    traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, VariantCountOf},
     weights::{
-        IdentityFee, Weight,
         constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
+        IdentityFee, Weight,
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::{Perbill, traits::One};
+use sp_runtime::{traits::One, Perbill};
 use sp_version::RuntimeVersion;
 
 // Local module imports
 use super::{
-    AccountId, Aura, Balance, Balances, Block, BlockNumber, EXISTENTIAL_DEPOSIT, Hash, Nonce,
-    PalletInfo, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
-    RuntimeOrigin, RuntimeTask, SLOT_DURATION, System, VERSION,
+    AccountId, Aura, Balance, Balances, Block, BlockNumber, Hash, Nonce, PalletInfo, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask,
+    System, Timestamp, EXISTENTIAL_DEPOSIT, SLOT_DURATION, VERSION,
 };
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
@@ -157,8 +157,50 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-/// Configure the pallet-template in pallets/template.
-impl pallet_template::Config for Runtime {
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
+
+// Contracts specific parameters
+parameter_types! {
+    pub const DepositPerItem: Balance = 1_000 * EXISTENTIAL_DEPOSIT;
+    pub const DepositPerByte: Balance = 100 * EXISTENTIAL_DEPOSIT;
+    pub const DefaultDepositLimit: Balance = 1_000_000 * EXISTENTIAL_DEPOSIT;
+    pub const MaxCodeLen: u32 = 123 * 1024; // 123 KB as specified in CLAUDE.md
+    pub const MaxStorageKeyLen: u32 = 128; // 128 bytes as specified in CLAUDE.md
+    pub const MaxTransientStorageSize: u32 = 1024 * 1024; // 1 MB
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
+}
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = pallet_insecure_randomness_collective_flip::Pallet<Runtime>;
+    type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
+    type RuntimeCall = RuntimeCall;
+    type CallFilter = frame_support::traits::Nothing;
+    type DepositPerItem = DepositPerItem;
+    type DepositPerByte = DepositPerByte;
+    type DefaultDepositLimit = DefaultDepositLimit;
+    type CallStack = [pallet_contracts::Frame<Self>; 5];
+    type WeightPrice = pallet_transaction_payment::Pallet<Runtime>;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Runtime>;
+    type ChainExtension = ();
+    type Schedule = Schedule;
+    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+    type MaxCodeLen = MaxCodeLen;
+    type MaxStorageKeyLen = MaxStorageKeyLen;
+    type MaxTransientStorageSize = MaxTransientStorageSize;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type UnsafeUnstableInterface = ConstBool<true>;
+    type UploadOrigin = frame_system::EnsureSigned<AccountId>;
+    type InstantiateOrigin = frame_system::EnsureSigned<AccountId>;
+    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type Debug = ();
+    type Environment = ();
+    type ApiVersion = ();
+    type Migrations = ();
+    type Xcm = ();
 }

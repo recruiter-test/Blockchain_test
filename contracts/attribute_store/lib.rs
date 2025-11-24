@@ -6,6 +6,9 @@ mod attribute_store {
     use ink::prelude::vec::Vec;
     use ink::storage::Mapping;
 
+    /// Maximum length for string inputs (namespace, key, value)
+    const MAX_STRING_LENGTH: usize = 256;
+
     /// Attribute definition for ABAC
     #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -69,6 +72,8 @@ mod attribute_store {
         NotAuthorized,
         /// Attribute not found
         AttributeNotFound,
+        /// Input string exceeds maximum length
+        InputTooLong,
     }
 
     pub type Result<T> = core::result::Result<T, Error>;
@@ -94,6 +99,14 @@ mod attribute_store {
             key: String,
             value: String,
         ) -> Result<()> {
+            // Validate input lengths
+            if namespace.len() > MAX_STRING_LENGTH
+                || key.len() > MAX_STRING_LENGTH
+                || value.len() > MAX_STRING_LENGTH
+            {
+                return Err(Error::InputTooLong);
+            }
+
             let caller = self.env().caller();
 
             if !self.can_write(caller, account) {

@@ -25,7 +25,6 @@ COPY .cargo ./.cargo
 COPY node ./node
 COPY runtime ./runtime
 COPY pallets ./pallets
-COPY libs ./libs
 
 # Build the node in release mode
 RUN cargo build --release --package arkavo-node

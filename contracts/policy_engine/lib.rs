@@ -6,6 +6,11 @@ mod policy_engine {
     use ink::prelude::vec::Vec;
     use ink::storage::Mapping;
 
+    /// Maximum length for string inputs (resource_id, attribute keys/values)
+    const MAX_STRING_LENGTH: usize = 256;
+    /// Maximum number of required attributes in a policy
+    const MAX_ATTRIBUTES: usize = 50;
+
     /// Policy rule for access control
     #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
@@ -80,6 +85,10 @@ mod policy_engine {
         PolicyNotFound,
         /// External contract not configured
         ContractNotConfigured,
+        /// Input string exceeds maximum length
+        InputTooLong,
+        /// Too many attributes in policy
+        TooManyAttributes,
     }
 
     pub type Result<T> = core::result::Result<T, Error>;
@@ -129,6 +138,22 @@ mod policy_engine {
                 return Err(Error::NotOwner);
             }
 
+            // Validate input lengths
+            if resource_id.len() > MAX_STRING_LENGTH {
+                return Err(Error::InputTooLong);
+            }
+
+            if required_attributes.len() > MAX_ATTRIBUTES {
+                return Err(Error::TooManyAttributes);
+            }
+
+            // Validate each attribute tuple
+            for (key, value) in &required_attributes {
+                if key.len() > MAX_STRING_LENGTH || value.len() > MAX_STRING_LENGTH {
+                    return Err(Error::InputTooLong);
+                }
+            }
+
             let policy_id = self.next_policy_id;
             let policy = PolicyRule {
                 resource_id: resource_id.clone(),
@@ -159,6 +184,18 @@ mod policy_engine {
         ) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
+            }
+
+            // Validate input lengths
+            if required_attributes.len() > MAX_ATTRIBUTES {
+                return Err(Error::TooManyAttributes);
+            }
+
+            // Validate each attribute tuple
+            for (key, value) in &required_attributes {
+                if key.len() > MAX_STRING_LENGTH || value.len() > MAX_STRING_LENGTH {
+                    return Err(Error::InputTooLong);
+                }
             }
 
             let mut policy = self.policies.get(policy_id).ok_or(Error::PolicyNotFound)?;

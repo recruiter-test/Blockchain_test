@@ -5,6 +5,9 @@ mod payment_integration {
     use ink::prelude::string::String;
     use ink::storage::Mapping;
 
+    /// Maximum length for string inputs (payment_provider, transaction_id)
+    const MAX_STRING_LENGTH: usize = 256;
+
     /// Payment status
     #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -99,6 +102,8 @@ mod payment_integration {
         PaymentAlreadyExists,
         /// Invalid payment status
         InvalidStatus,
+        /// Input string exceeds maximum length
+        InputTooLong,
     }
 
     pub type Result<T> = core::result::Result<T, Error>;
@@ -157,6 +162,13 @@ mod payment_integration {
         ) -> Result<u32> {
             if !self.is_authorized_processor(self.env().caller()) {
                 return Err(Error::NotAuthorizedProcessor);
+            }
+
+            // Validate input lengths
+            if payment_provider.len() > MAX_STRING_LENGTH
+                || transaction_id.len() > MAX_STRING_LENGTH
+            {
+                return Err(Error::InputTooLong);
             }
 
             // Check if transaction already exists

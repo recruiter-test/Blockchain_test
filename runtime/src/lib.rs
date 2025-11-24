@@ -11,8 +11,9 @@ pub mod configs;
 extern crate alloc;
 use alloc::vec::Vec;
 use sp_runtime::{
-    MultiAddress, MultiSignature, generic, impl_opaque_keys,
+    generic, impl_opaque_keys,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiAddress, MultiSignature,
 };
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -225,7 +226,9 @@ mod runtime {
     #[runtime::pallet_index(6)]
     pub type Sudo = pallet_sudo;
 
-    // Include the custom logic from the pallet-template in the runtime.
     #[runtime::pallet_index(7)]
-    pub type Template = pallet_template;
+    pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
+
+    #[runtime::pallet_index(8)]
+    pub type Contracts = pallet_contracts;
 }
