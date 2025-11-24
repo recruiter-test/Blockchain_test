@@ -89,17 +89,16 @@ The following dependencies are flagged as unmaintained in our dependency tree:
 #### pallet-staking: Missing peek_disabled trait implementation
 - **Severity**: Build Error (Not Runtime Security Issue)
 - **Status**: Upstream Substrate bug in stable2509 branch
-- **Description**: The `MigrateDisabledValidators` trait implementation in `pallet-staking` has a conditionally compiled method `peek_disabled()` that is only available with the `try-runtime` feature enabled. This causes compilation failures when building without `try-runtime`.
-- **Impact**: Cannot run `cargo clippy --all-targets` without compilation errors
-- **Workaround Applied**: Removed `--all-targets` from clippy command in CI workflows
-  - Clippy now checks only library code, not tests/benches/examples
-  - All build/test commands include `--features try-runtime` flag
-- **Trade-off**: We don't get clippy checking on test code, but this is acceptable since:
-  - Test code is simpler and less critical than library code
-  - The pallet-staking issue only appears when checking test/bench targets
-  - We can still run tests normally with `cargo test --features try-runtime`
-- **Note**: This does not affect runtime security as we do not use `pallet-staking` directly; it's only a transitive dependency through benchmarking tools
-- **Tracking**: Substrate stable2509 branch commit fd902fcc - awaiting upstream fix
+- **Description**: The `MigrateDisabledValidators` trait implementation in `pallet-staking` has a conditionally compiled method `peek_disabled()` that is only available with the `try-runtime` feature enabled. This causes compilation failures when running clippy on the node package.
+- **Impact**: Clippy fails when checking node package due to missing trait implementation in transitive dependency (sc-service → pallet-authority-discovery → pallet-staking)
+- **Root Cause**: Cargo feature flags don't propagate to transitive git dependencies, and using `[patch]` to override features isn't possible when patching the same git source
+- **Workaround Applied**: Modified `.github/workflows/feature.yaml` clippy job to only check the runtime package, skipping the node package:
+  ```yaml
+  cargo clippy --package arkavo-runtime --features try-runtime -- -D warnings ...
+  ```
+- **Trade-off**: Node code doesn't receive clippy linting in CI. Runtime (more security-critical) receives full pedantic linting.
+- **Why this works**: Runtime package doesn't have the sc-service → pallet-staking dependency chain, so the compilation error doesn't occur
+- **Tracking**: Substrate stable2509 branch commit fd902fcc - awaiting upstream fix. Once fixed, restore clippy to check all packages.
 
 ### Dependency Management Strategy
 

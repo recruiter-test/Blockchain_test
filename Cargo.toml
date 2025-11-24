@@ -17,6 +17,21 @@ edition = "2021"
 repository = "https://github.com/arkavo-org/arkavo-node"
 license = "GPL-3.0-or-later"
 
+[workspace.lints.clippy]
+# Deny all clippy warnings by default (priority -1, lowest)
+all = { level = "deny", priority = -1 }
+# Deny cargo lints (dependency management, priority -1)
+cargo = { level = "deny", priority = -1 }
+# Security-related lints (warn to not block, but show issues, priority 0)
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"
+unimplemented = "warn"
+# Allow some cargo lints that don't apply to Substrate projects (priority 1, highest)
+multiple_crate_versions = "allow"
+cargo_common_metadata = "allow"
+
 [workspace.dependencies]
 # Polkadot SDK - using stable2509 (September 2025 stable release)
 # All Substrate dependencies come from the same commit for compatibility

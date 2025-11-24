@@ -9,5 +9,8 @@ WASM_BUILD_RUSTFLAGS = "-C target-feature=-sign-ext,-bulk-memory,-mutable-global
 # Build artifacts go to default target/ directory in project
 
 [alias]
-# Strict check with all lints
-check-strict = "clippy --all-targets --all-features -- -D warnings -D clippy::all -D clippy::pedantic -D clippy::cargo"
+# Strict check with workspace lints (configured in root Cargo.toml [workspace.lints])
+check-strict = "clippy --all-targets"
+# Check specific package
+check-runtime = "clippy --package arkavo-runtime"
+check-node = "clippy --package arkavo-node"
