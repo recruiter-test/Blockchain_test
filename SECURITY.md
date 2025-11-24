@@ -88,12 +88,19 @@ The following dependencies are flagged as unmaintained in our dependency tree:
 
 #### pallet-staking: Missing peek_disabled trait implementation
 - **Severity**: Build Error (Not Runtime Security Issue)
-- **Status**: Upstream Substrate bug in stable2509
+- **Status**: Upstream Substrate bug in stable2509 branch
 - **Description**: The `MigrateDisabledValidators` trait implementation in `pallet-staking` has a conditionally compiled method `peek_disabled()` that is only available with the `try-runtime` feature enabled. This causes compilation failures when building without `try-runtime`.
-- **Impact**: CI builds fail without the `try-runtime` feature
-- **Workaround**: All CI workflows now build with `--features try-runtime` to ensure the trait implementation is complete
-- **Note**: This does not affect runtime security as we do not use `pallet-staking` directly; it's only a transitive dependency
-- **Tracking**: Substrate stable2509 branch commit fd902fcc
+- **Impact**: Cannot build or test workspace without `--features try-runtime`
+- **Workaround**: All CI workflows and cargo commands must include `--features try-runtime`:
+  ```bash
+  cargo build --features try-runtime
+  cargo test --features try-runtime
+  cargo clippy --features try-runtime
+  cargo outdated --features try-runtime
+  ```
+- **Why not make it a default feature?**: Per project policy, we avoid adding features to default builds that aren't needed for development. This is a CI-only workaround.
+- **Note**: This does not affect runtime security as we do not use `pallet-staking` directly; it's only a transitive dependency through benchmarking tools
+- **Tracking**: Substrate stable2509 branch commit fd902fcc - awaiting upstream fix
 
 ### Dependency Management Strategy
 

@@ -110,11 +110,17 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
 
       - name: Check for outdated dependencies
         run: |
           cargo install cargo-outdated --locked
-          cargo outdated --exit-code 1 || echo "::warning::Outdated dependencies found"
+          cargo outdated --exit-code 1 --features try-runtime || echo "::warning::Outdated dependencies found"
         continue-on-error: true
 
       - name: Check Substrate updates
@@ -145,4 +151,4 @@ jobs:
         run: cargo build --package arkavo-node --features try-runtime
 
       - name: Run tests
-        run: cargo test --workspace --exclude access_registry --exclude attribute_store --exclude policy_engine --exclude payment_integration
+        run: cargo test --workspace --exclude access_registry --exclude attribute_store --exclude policy_engine --exclude payment_integration --features try-runtime
