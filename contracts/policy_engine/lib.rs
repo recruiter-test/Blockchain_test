@@ -29,11 +29,11 @@ mod policy_engine {
         /// Next policy ID
         next_policy_id: u32,
         /// Contract owner
-        owner: AccountId,
+        owner: Address,
         /// Access registry contract address
-        access_registry: Option<AccountId>,
+        access_registry: Option<Address>,
         /// Attribute store contract address
-        attribute_store: Option<AccountId>,
+        attribute_store: Option<Address>,
     }
 
     /// Events emitted by the contract
@@ -59,7 +59,7 @@ mod policy_engine {
     #[ink(event)]
     pub struct AccessGranted {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         #[ink(topic)]
         policy_id: u32,
         resource_id: String,
@@ -68,7 +68,7 @@ mod policy_engine {
     #[ink(event)]
     pub struct AccessDenied {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         #[ink(topic)]
         policy_id: u32,
         resource_id: String,
@@ -93,6 +93,12 @@ mod policy_engine {
 
     pub type Result<T> = core::result::Result<T, Error>;
 
+    impl Default for PolicyEngine {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl PolicyEngine {
         /// Constructor that initializes the contract
         #[ink(constructor)]
@@ -108,7 +114,7 @@ mod policy_engine {
 
         /// Set the access registry contract address
         #[ink(message)]
-        pub fn set_access_registry(&mut self, address: AccountId) -> Result<()> {
+        pub fn set_access_registry(&mut self, address: Address) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
             }
@@ -118,7 +124,7 @@ mod policy_engine {
 
         /// Set the attribute store contract address
         #[ink(message)]
-        pub fn set_attribute_store(&mut self, address: AccountId) -> Result<()> {
+        pub fn set_attribute_store(&mut self, address: Address) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
             }
@@ -234,7 +240,7 @@ mod policy_engine {
         /// Note: In a real implementation, this would call the access_registry
         /// and attribute_store contracts. For now, it's a simplified version.
         #[ink(message)]
-        pub fn evaluate_access(&self, account: AccountId, policy_id: u32) -> bool {
+        pub fn evaluate_access(&self, account: Address, policy_id: u32) -> bool {
             if let Some(policy) = self.policies.get(policy_id) {
                 if !policy.active {
                     self.env().emit_event(AccessDenied {
@@ -264,7 +270,7 @@ mod policy_engine {
 
         /// Get the contract owner
         #[ink(message)]
-        pub fn owner(&self) -> AccountId {
+        pub fn owner(&self) -> Address {
             self.owner
         }
 
@@ -282,7 +288,7 @@ mod policy_engine {
         #[ink::test]
         fn new_works() {
             let contract = PolicyEngine::new();
-            assert_eq!(contract.owner(), AccountId::from([0x01; 32]));
+            assert_eq!(contract.owner(), Address::from([0x01; 20]));
             assert_eq!(contract.next_policy_id(), 0);
         }
 
@@ -347,7 +353,7 @@ mod policy_engine {
         #[ink::test]
         fn evaluate_access_works() {
             let mut contract = PolicyEngine::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
             let policy_id = contract
                 .create_policy(
                     String::from("resource-123"),

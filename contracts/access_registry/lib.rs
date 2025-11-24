@@ -5,42 +5,37 @@ mod access_registry {
     use ink::storage::Mapping;
 
     /// Defines entitlement levels for access control
-    #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
+    #[derive(Default, Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
     pub enum EntitlementLevel {
+        #[default]
         None,
         Basic,
         Premium,
-        VIP,
-    }
-
-    impl Default for EntitlementLevel {
-        fn default() -> Self {
-            Self::None
-        }
+        Vip,
     }
 
     /// Access registry contract for managing entitlements
     #[ink(storage)]
     pub struct AccessRegistry {
         /// Mapping from account to their entitlement level
-        entitlements: Mapping<AccountId, EntitlementLevel>,
+        entitlements: Mapping<Address, EntitlementLevel>,
         /// Contract owner who can grant/revoke entitlements
-        owner: AccountId,
+        owner: Address,
     }
 
     /// Events emitted by the contract
     #[ink(event)]
     pub struct EntitlementGranted {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         level: EntitlementLevel,
     }
 
     #[ink(event)]
     pub struct EntitlementRevoked {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
     }
 
     /// Errors that can occur during contract execution
@@ -54,6 +49,12 @@ mod access_registry {
     }
 
     pub type Result<T> = core::result::Result<T, Error>;
+
+    impl Default for AccessRegistry {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
 
     impl AccessRegistry {
         /// Constructor that initializes the contract
@@ -69,7 +70,7 @@ mod access_registry {
         #[ink(message)]
         pub fn grant_entitlement(
             &mut self,
-            account: AccountId,
+            account: Address,
             level: EntitlementLevel,
         ) -> Result<()> {
             if self.env().caller() != self.owner {
@@ -88,7 +89,7 @@ mod access_registry {
 
         /// Revoke an entitlement from an account
         #[ink(message)]
-        pub fn revoke_entitlement(&mut self, account: AccountId) -> Result<()> {
+        pub fn revoke_entitlement(&mut self, account: Address) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
             }
@@ -102,7 +103,7 @@ mod access_registry {
 
         /// Check the entitlement level of an account
         #[ink(message)]
-        pub fn get_entitlement(&self, account: AccountId) -> EntitlementLevel {
+        pub fn get_entitlement(&self, account: Address) -> EntitlementLevel {
             self.entitlements.get(account).unwrap_or_default()
         }
 
@@ -110,7 +111,7 @@ mod access_registry {
         #[ink(message)]
         pub fn has_entitlement(
             &self,
-            account: AccountId,
+            account: Address,
             required_level: EntitlementLevel,
         ) -> bool {
             let current_level = self.get_entitlement(account);
@@ -119,7 +120,7 @@ mod access_registry {
 
         /// Get the contract owner
         #[ink(message)]
-        pub fn owner(&self) -> AccountId {
+        pub fn owner(&self) -> Address {
             self.owner
         }
 
@@ -129,7 +130,7 @@ mod access_registry {
                 EntitlementLevel::None => 0,
                 EntitlementLevel::Basic => 1,
                 EntitlementLevel::Premium => 2,
-                EntitlementLevel::VIP => 3,
+                EntitlementLevel::Vip => 3,
             }
         }
     }
@@ -141,24 +142,24 @@ mod access_registry {
         #[ink::test]
         fn new_works() {
             let contract = AccessRegistry::new();
-            assert_eq!(contract.owner(), AccountId::from([0x01; 32]));
+            assert_eq!(contract.owner(), Address::from([0x01; 20]));
         }
 
         #[ink::test]
         fn grant_entitlement_works() {
             let mut contract = AccessRegistry::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             assert!(contract
-                .grant_entitlement(account, EntitlementLevel::VIP)
+                .grant_entitlement(account, EntitlementLevel::Vip)
                 .is_ok());
-            assert_eq!(contract.get_entitlement(account), EntitlementLevel::VIP);
+            assert_eq!(contract.get_entitlement(account), EntitlementLevel::Vip);
         }
 
         #[ink::test]
         fn has_entitlement_works() {
             let mut contract = AccessRegistry::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             contract
                 .grant_entitlement(account, EntitlementLevel::Premium)
@@ -166,16 +167,16 @@ mod access_registry {
 
             assert!(contract.has_entitlement(account, EntitlementLevel::Basic));
             assert!(contract.has_entitlement(account, EntitlementLevel::Premium));
-            assert!(!contract.has_entitlement(account, EntitlementLevel::VIP));
+            assert!(!contract.has_entitlement(account, EntitlementLevel::Vip));
         }
 
         #[ink::test]
         fn revoke_entitlement_works() {
             let mut contract = AccessRegistry::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             contract
-                .grant_entitlement(account, EntitlementLevel::VIP)
+                .grant_entitlement(account, EntitlementLevel::Vip)
                 .unwrap();
             assert!(contract.revoke_entitlement(account).is_ok());
             assert_eq!(contract.get_entitlement(account), EntitlementLevel::None);

@@ -10,7 +10,7 @@ mod payment_integration {
 
     /// Payment status
     #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
     pub enum PaymentStatus {
         Pending,
         Completed,
@@ -20,9 +20,9 @@ mod payment_integration {
 
     /// Payment record
     #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
     pub struct Payment {
-        pub account: AccountId,
+        pub account: Address,
         pub payment_provider: String, // "apple", "google", etc.
         pub transaction_id: String,
         pub amount: Balance,
@@ -41,11 +41,11 @@ mod payment_integration {
         /// Next payment ID
         next_payment_id: u32,
         /// Contract owner
-        owner: AccountId,
+        owner: Address,
         /// Access registry contract address
-        access_registry: Option<AccountId>,
+        access_registry: Option<Address>,
         /// Authorized payment processors
-        authorized_processors: Mapping<AccountId, bool>,
+        authorized_processors: Mapping<Address, bool>,
     }
 
     /// Events emitted by the contract
@@ -54,7 +54,7 @@ mod payment_integration {
         #[ink(topic)]
         payment_id: u32,
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         payment_provider: String,
         transaction_id: String,
         amount: Balance,
@@ -65,7 +65,7 @@ mod payment_integration {
         #[ink(topic)]
         payment_id: u32,
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         entitlement_granted: u8,
     }
 
@@ -85,7 +85,7 @@ mod payment_integration {
     #[ink(event)]
     pub struct ProcessorAuthorized {
         #[ink(topic)]
-        processor: AccountId,
+        processor: Address,
     }
 
     /// Errors that can occur during contract execution
@@ -108,6 +108,12 @@ mod payment_integration {
 
     pub type Result<T> = core::result::Result<T, Error>;
 
+    impl Default for PaymentIntegration {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl PaymentIntegration {
         /// Constructor that initializes the contract
         #[ink(constructor)]
@@ -128,7 +134,7 @@ mod payment_integration {
 
         /// Set the access registry contract address
         #[ink(message)]
-        pub fn set_access_registry(&mut self, address: AccountId) -> Result<()> {
+        pub fn set_access_registry(&mut self, address: Address) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
             }
@@ -138,7 +144,7 @@ mod payment_integration {
 
         /// Authorize a payment processor
         #[ink(message)]
-        pub fn authorize_processor(&mut self, processor: AccountId) -> Result<()> {
+        pub fn authorize_processor(&mut self, processor: Address) -> Result<()> {
             if self.env().caller() != self.owner {
                 return Err(Error::NotOwner);
             }
@@ -154,7 +160,7 @@ mod payment_integration {
         #[ink(message)]
         pub fn record_payment(
             &mut self,
-            account: AccountId,
+            account: Address,
             payment_provider: String,
             transaction_id: String,
             amount: Balance,
@@ -287,13 +293,13 @@ mod payment_integration {
 
         /// Check if an account is an authorized processor
         #[ink(message)]
-        pub fn is_authorized_processor(&self, account: AccountId) -> bool {
+        pub fn is_authorized_processor(&self, account: Address) -> bool {
             self.authorized_processors.get(account).unwrap_or(false)
         }
 
         /// Get the contract owner
         #[ink(message)]
-        pub fn owner(&self) -> AccountId {
+        pub fn owner(&self) -> Address {
             self.owner
         }
 
@@ -311,7 +317,7 @@ mod payment_integration {
         #[ink::test]
         fn new_works() {
             let contract = PaymentIntegration::new();
-            let owner = AccountId::from([0x01; 32]);
+            let owner = Address::from([0x01; 20]);
             assert_eq!(contract.owner(), owner);
             assert!(contract.is_authorized_processor(owner));
         }
@@ -319,7 +325,7 @@ mod payment_integration {
         #[ink::test]
         fn record_payment_works() {
             let mut contract = PaymentIntegration::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             let payment_id = contract
                 .record_payment(
@@ -341,7 +347,7 @@ mod payment_integration {
         #[ink::test]
         fn complete_payment_works() {
             let mut contract = PaymentIntegration::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             let payment_id = contract
                 .record_payment(
@@ -362,7 +368,7 @@ mod payment_integration {
         #[ink::test]
         fn refund_payment_works() {
             let mut contract = PaymentIntegration::new();
-            let account = AccountId::from([0x02; 32]);
+            let account = Address::from([0x02; 20]);
 
             let payment_id = contract
                 .record_payment(
@@ -384,7 +390,7 @@ mod payment_integration {
         #[ink::test]
         fn authorize_processor_works() {
             let mut contract = PaymentIntegration::new();
-            let processor = AccountId::from([0x03; 32]);
+            let processor = Address::from([0x03; 20]);
 
             assert!(contract.authorize_processor(processor).is_ok());
             assert!(contract.is_authorized_processor(processor));

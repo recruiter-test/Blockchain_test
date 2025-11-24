@@ -20,3 +20,6 @@ panic = "unwind"
 lto = true
 opt-level = "z"
 overflow-checks = true
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(ink_abi, values(any()))"] }
