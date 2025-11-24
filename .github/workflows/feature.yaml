@@ -131,6 +131,7 @@ jobs:
             --exclude attribute_store \
             --exclude policy_engine \
             --exclude payment_integration \
+            --features try-runtime \
             -- \
             -D warnings \
             -D clippy::all \
@@ -214,10 +215,10 @@ jobs:
           sudo apt-get install -y clang libssl-dev llvm libudev-dev protobuf-compiler
 
       - name: Build node
-        run: cargo build --package arkavo-node
+        run: cargo build --package arkavo-node --features try-runtime
 
       - name: Build runtime
-        run: cargo build --package arkavo-runtime
+        run: cargo build --package arkavo-runtime --features try-runtime
 
       - name: Upload node binary
         uses: actions/upload-artifact@v4

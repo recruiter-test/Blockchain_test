@@ -20,13 +20,8 @@ arkavo-node/
 ├── node/              # Blockchain node implementation
 ├── runtime/           # Runtime logic and pallet configuration
 ├── contracts/         # Ink! smart contracts
-│   ├── access_registry/
-│   ├── attribute_store/
-│   ├── policy_engine/
-│   └── payment_integration/
 ├── tools/             # Deployment and utility tools
 │   └── deployer/
-├── docker/            # Docker configuration
 └── .github/           # CI/CD workflows
 ```
 
@@ -304,7 +299,6 @@ GitHub Actions workflows are configured for:
 - `runtime/`: Runtime configuration with `pallet-contracts` enabled
 - `contracts/`: Ink! smart contracts for access control and entitlements
 - `tools/deployer/`: Rust binary for contract deployment automation
-- `docker/`: Docker and docker-compose configuration
 
 ### Adding New Contracts
 

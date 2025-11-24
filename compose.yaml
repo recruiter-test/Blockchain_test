@@ -4,7 +4,7 @@ services:
   arkavo-node:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: arkavo-node
     ports:
       - "9944:9944"  # WebSocket
