@@ -102,11 +102,8 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, rust-src
           target: wasm32-unknown-unknown
-
-      - name: Install cargo-contract
-        run: cargo install cargo-contract --locked --version 6.0.0-beta.1
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -194,6 +191,7 @@ jobs:
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
+          components: rust-src
 
       - name: Install cargo-contract
         run: cargo install cargo-contract --locked --version 6.0.0-beta.1
@@ -217,7 +215,7 @@ jobs:
         with:
           name: ${{ matrix.contract }}
           path: |
-            contracts/${{ matrix.contract }}/target/ink/${{ matrix.contract }}.wasm
+            contracts/${{ matrix.contract }}/target/ink/${{ matrix.contract }}.polkavm
             contracts/${{ matrix.contract }}/target/ink/${{ matrix.contract }}.json
           retention-days: 7
 
@@ -274,9 +272,7 @@ jobs:
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
-
-      - name: Install cargo-contract
-        run: cargo install cargo-contract --locked --version 6.0.0-beta.1
+          components: rust-src
 
       - name: Cache cargo
         uses: actions/cache@v4

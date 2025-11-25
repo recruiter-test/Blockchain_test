@@ -1,17 +1,17 @@
 # Multi-stage build for Arkavo Node
 
 # Stage 1: Build the node
-FROM rust:latest as builder
+FROM rust:latest AS builder
 
 # Install dependencies
 RUN apt-get update && \
     apt-get install -y clang libssl-dev llvm libudev-dev protobuf-compiler && \
     rm -rf /var/lib/apt/lists/*
 
-# Set up Rust toolchain
-# Note: rust:latest already has stable. We need to ensure wasm target is there.
-RUN rustup target add wasm32-unknown-unknown && \
-    rustup component add rust-src
+# Set up Rust toolchain - need nightly for WASM builds
+RUN rustup install nightly && \
+    rustup target add wasm32-unknown-unknown --toolchain nightly && \
+    rustup component add rust-src --toolchain nightly
 
 WORKDIR /arkavo
 
@@ -26,7 +26,7 @@ COPY node ./node
 COPY runtime ./runtime
 
 # Build the node in release mode
-RUN cargo build --release --package arkavo-node
+RUN cargo +nightly build --release --package arkavo-node
 
 # Stage 2: Runtime image
 FROM ubuntu:24.04
@@ -36,8 +36,8 @@ RUN apt-get update && \
     apt-get install -y ca-certificates curl libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Create user for running the node
-RUN useradd -m -u 1000 -U -s /bin/sh -d /arkavo arkavo
+# Create user for running the node (use UID 1001 to avoid conflict with ubuntu user)
+RUN useradd -m -u 1001 -U -s /bin/sh -d /arkavo arkavo
 
 WORKDIR /arkavo
 
