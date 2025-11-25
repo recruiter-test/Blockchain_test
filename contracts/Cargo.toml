@@ -9,7 +9,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Arkavo Team"]
-edition = "2021"
+edition = "2024"
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
@@ -20,3 +20,6 @@ panic = "unwind"
 lto = true
 opt-level = "z"
 overflow-checks = true
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(ink_abi, values(any()))"] }

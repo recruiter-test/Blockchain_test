@@ -256,14 +256,19 @@ act -j supply-chain     # Check dependency sources
 ```
 
 **Local Code Quality Checks:**
+
+#### Format check
 ```bash
-# Format check
 cargo fmt --all -- --check
+```
 
-# Clippy on node & runtime
+#### Clippy on node & runtime
+```bash
 cargo clippy --package arkavo-node --package arkavo-runtime -- -D warnings
+```
 
-# Clippy on contracts (requires navigating to contracts dir)
+#### Clippy on contracts (requires navigating to contracts dir)
+```bash
 cd contracts && cargo clippy --workspace -- -D warnings
 ```
 

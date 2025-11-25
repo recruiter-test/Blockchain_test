@@ -161,14 +161,13 @@ pub fn new_full<
     let metrics = N::register_notification_metrics(config.prometheus_registry());
 
     let peer_store_handle = net_config.peer_store_handle();
-    let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-        &client
-            .block_hash(0)
-            .ok()
-            .flatten()
-            .expect("Genesis block exists; qed"),
-        &config.chain_spec,
-    );
+    let genesis_hash = client
+        .block_hash(0)
+        .ok()
+        .flatten()
+        .ok_or_else(|| Box::new(ServiceError::Application("Genesis block not found".into())))?;
+    let grandpa_protocol_name =
+        sc_consensus_grandpa::protocol_standard_name(&genesis_hash, &config.chain_spec);
     // Removed .map_err(Box::new)? as grandpa_peers_set_config returns a tuple, not a Result
     let (grandpa_protocol_config, grandpa_notification_service) =
         sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(

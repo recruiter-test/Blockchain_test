@@ -3,38 +3,31 @@
 #[ink::contract]
 mod attribute_store {
     use ink::prelude::string::String;
-    use ink::prelude::vec::Vec;
     use ink::storage::Mapping;
 
     /// Maximum length for string inputs (namespace, key, value)
     const MAX_STRING_LENGTH: usize = 256;
 
-    /// Attribute definition for ABAC
-    #[derive(Debug, PartialEq, Eq, Clone, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub struct Attribute {
-        pub namespace: String,
-        pub key: String,
-        pub value: String,
-    }
+    /// Type alias for attribute key: (account, namespace, key)
+    type AttributeKey = (Address, String, String);
 
     /// Attribute store contract for managing ABAC attributes
     #[ink(storage)]
     pub struct AttributeStore {
         /// Mapping from (account, namespace, key) to value
-        attributes: Mapping<(AccountId, String, String), String>,
+        attributes: Mapping<AttributeKey, String>,
         /// Mapping to track who can write attributes for an account
         /// (account, writer) -> bool
-        authorized_writers: Mapping<(AccountId, AccountId), bool>,
+        authorized_writers: Mapping<(Address, Address), bool>,
         /// Contract owner
-        owner: AccountId,
+        owner: Address,
     }
 
     /// Events emitted by the contract
     #[ink(event)]
     pub struct AttributeSet {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         namespace: String,
         key: String,
         value: String,
@@ -43,7 +36,7 @@ mod attribute_store {
     #[ink(event)]
     pub struct AttributeRemoved {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         namespace: String,
         key: String,
     }
@@ -51,17 +44,17 @@ mod attribute_store {
     #[ink(event)]
     pub struct WriterAuthorized {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         #[ink(topic)]
-        writer: AccountId,
+        writer: Address,
     }
 
     #[ink(event)]
     pub struct WriterRevoked {
         #[ink(topic)]
-        account: AccountId,
+        account: Address,
         #[ink(topic)]
-        writer: AccountId,
+        writer: Address,
     }
 
     /// Errors that can occur during contract execution
@@ -77,6 +70,12 @@ mod attribute_store {
     }
 
     pub type Result<T> = core::result::Result<T, Error>;
+
+    impl Default for AttributeStore {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
 
     impl AttributeStore {
         /// Constructor that initializes the contract
@@ -94,7 +93,7 @@ mod attribute_store {
         #[ink(message)]
         pub fn set_attribute(
             &mut self,
-            account: AccountId,
+            account: Address,
             namespace: String,
             key: String,
             value: String,
@@ -130,7 +129,7 @@ mod attribute_store {
         #[ink(message)]
         pub fn remove_attribute(
             &mut self,
-            account: AccountId,
+            account: Address,
             namespace: String,
             key: String,
         ) -> Result<()> {
@@ -155,7 +154,7 @@ mod attribute_store {
         #[ink(message)]
         pub fn get_attribute(
             &self,
-            account: AccountId,
+            account: Address,
             namespace: String,
             key: String,
         ) -> Option<String> {
@@ -164,7 +163,7 @@ mod attribute_store {
 
         /// Authorize a writer to set attributes for an account
         #[ink(message)]
-        pub fn authorize_writer(&mut self, writer: AccountId) -> Result<()> {
+        pub fn authorize_writer(&mut self, writer: Address) {
             let caller = self.env().caller();
             self.authorized_writers.insert((caller, writer), &true);
 
@@ -172,13 +171,11 @@ mod attribute_store {
                 account: caller,
                 writer,
             });
-
-            Ok(())
         }
 
         /// Revoke a writer's authorization
         #[ink(message)]
-        pub fn revoke_writer(&mut self, writer: AccountId) -> Result<()> {
+        pub fn revoke_writer(&mut self, writer: Address) {
             let caller = self.env().caller();
             self.authorized_writers.remove((caller, writer));
 
@@ -186,13 +183,11 @@ mod attribute_store {
                 account: caller,
                 writer,
             });
-
-            Ok(())
         }
 
         /// Check if a caller can write attributes for an account
         #[ink(message)]
-        pub fn can_write(&self, caller: AccountId, account: AccountId) -> bool {
+        pub fn can_write(&self, caller: Address, account: Address) -> bool {
             // Owner can write to any account
             if caller == self.owner {
                 return true;
@@ -211,7 +206,7 @@ mod attribute_store {
 
         /// Get the contract owner
         #[ink(message)]
-        pub fn owner(&self) -> AccountId {
+        pub fn owner(&self) -> Address {
             self.owner
         }
     }
@@ -223,13 +218,14 @@ mod attribute_store {
         #[ink::test]
         fn new_works() {
             let contract = AttributeStore::new();
-            assert_eq!(contract.owner(), AccountId::from([0x01; 32]));
+            // Owner is set to the default caller (zero address in test env)
+            assert_eq!(contract.owner(), Address::default());
         }
 
         #[ink::test]
         fn set_and_get_attribute_works() {
             let mut contract = AttributeStore::new();
-            let account = AccountId::from([0x01; 32]);
+            let account = Address::from([0x01; 20]);
 
             assert!(contract
                 .set_attribute(
@@ -249,7 +245,7 @@ mod attribute_store {
         #[ink::test]
         fn remove_attribute_works() {
             let mut contract = AttributeStore::new();
-            let account = AccountId::from([0x01; 32]);
+            let account = Address::from([0x01; 20]);
 
             contract
                 .set_attribute(
@@ -273,11 +269,13 @@ mod attribute_store {
         #[ink::test]
         fn authorize_writer_works() {
             let mut contract = AttributeStore::new();
-            let account = AccountId::from([0x01; 32]);
-            let writer = AccountId::from([0x02; 32]);
+            // The caller (default = zero address) authorizes a writer
+            let caller = Address::default();
+            let writer = Address::from([0x02; 20]);
 
-            assert!(contract.authorize_writer(writer).is_ok());
-            assert!(contract.can_write(writer, account));
+            contract.authorize_writer(writer);
+            // Writer should be able to write to the caller's account
+            assert!(contract.can_write(writer, caller));
         }
     }
 }

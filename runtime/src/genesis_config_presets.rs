@@ -99,11 +99,7 @@ pub fn get_preset(id: &PresetId) -> Option<Vec<u8>> {
         sp_genesis_builder::LOCAL_TESTNET_RUNTIME_PRESET => local_config_genesis(),
         _ => return None,
     };
-    Some(
-        serde_json::to_string(&patch)
-            .expect("serialization to json is expected to work. qed.")
-            .into_bytes(),
-    )
+    serde_json::to_string(&patch).ok().map(|s| s.into_bytes())
 }
 
 /// List of supported presets.
