@@ -159,48 +159,36 @@ impl pallet_sudo::Config for Runtime {
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
-// Contracts specific parameters
+// pallet-revive specific parameters (PolkaVM contract execution)
 parameter_types! {
     pub const DepositPerItem: Balance = 1_000 * EXISTENTIAL_DEPOSIT;
     pub const DepositPerByte: Balance = 100 * EXISTENTIAL_DEPOSIT;
-    pub const DefaultDepositLimit: Balance = 1_000_000 * EXISTENTIAL_DEPOSIT;
-    pub const MaxCodeLen: u32 = 123 * 1024; // 123 KB as specified in CLAUDE.md
-    pub const MaxStorageKeyLen: u32 = 128; // 128 bytes as specified in CLAUDE.md
-    pub const MaxTransientStorageSize: u32 = 1024 * 1024; // 1 MB
-    pub const MaxDelegateDependencies: u32 = 32;
-    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
+    pub const ChainId: u64 = 42;  // Development chain ID
+    pub const NativeToEthRatio: u32 = 1_000_000;  // 10^18 / 10^12 = 10^6
 }
 
-impl pallet_contracts::Config for Runtime {
+impl pallet_revive::Config for Runtime {
     type Time = Timestamp;
-    type Randomness = pallet_insecure_randomness_collective_flip::Pallet<Runtime>;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type CallFilter = frame_support::traits::Nothing;
-    type DepositPerItem = DepositPerItem;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type DepositPerByte = DepositPerByte;
-    type DefaultDepositLimit = DefaultDepositLimit;
-    type CallStack = [pallet_contracts::Frame<Self>; 5];
-    type WeightPrice = pallet_transaction_payment::Pallet<Runtime>;
-    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Runtime>;
-    type ChainExtension = ();
-    type Schedule = Schedule;
-    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type MaxCodeLen = MaxCodeLen;
-    type MaxStorageKeyLen = MaxStorageKeyLen;
-    type MaxTransientStorageSize = MaxTransientStorageSize;
-    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type DepositPerItem = DepositPerItem;
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
-    type UnsafeUnstableInterface = ConstBool<true>;
+    type WeightPrice = pallet_transaction_payment::Pallet<Runtime>;
+    type WeightInfo = pallet_revive::weights::SubstrateWeight<Runtime>;
+    type AddressMapper = pallet_revive::AccountId32Mapper<Self>;
+    type ChainId = ChainId;
+    type NativeToEthRatio = NativeToEthRatio;
+    type EthGasEncoder = ();
+    type Precompiles = ();
+    type FindAuthor = ();
     type UploadOrigin = frame_system::EnsureSigned<AccountId>;
     type InstantiateOrigin = frame_system::EnsureSigned<AccountId>;
-    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-    type RuntimeHoldReason = RuntimeHoldReason;
-    type Debug = ();
-    type Environment = ();
-    type ApiVersion = ();
-    type Migrations = ();
-    type Xcm = ();
+    type UnsafeUnstableInterface = ConstBool<true>; // Dev only!
+    type AllowEVMBytecode = ConstBool<false>;
+    type RuntimeMemory = ConstU32<{ 128 * 1024 * 1024 }>; // 128 MB
+    type PVFMemory = ConstU32<{ 512 * 1024 * 1024 }>; // 512 MB
 }

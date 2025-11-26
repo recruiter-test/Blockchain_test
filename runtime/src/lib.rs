@@ -230,5 +230,5 @@ mod runtime {
     pub type RandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
 
     #[runtime::pallet_index(8)]
-    pub type Contracts = pallet_contracts;
+    pub type Revive = pallet_revive;
 }
