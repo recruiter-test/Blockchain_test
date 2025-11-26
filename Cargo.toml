@@ -54,7 +54,7 @@ pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk.git", branc
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
+pallet-revive = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
 pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
 
 # Substrate Primitives
