@@ -39,8 +39,8 @@ polkadot-sdk-git = "https://github.com/paritytech/polkadot-sdk.git"
 polkadot-sdk-branch = "stable2509"
 
 # Codec
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false }
-scale-info = { version = "2.11", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.7.5", default-features = false }
+scale-info = { version = "2.11.6", default-features = false }
 
 # Substrate Pallets
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "stable2509", default-features = false }
