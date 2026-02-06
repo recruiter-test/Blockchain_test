@@ -6,6 +6,17 @@ const Web3 = require('web3');
 const artifacts = require('./build/contracts/Contacts.json');
 const config = require('./config');
 
+const logkit = require('logkitx');
+const logger = require('pino')({
+  level: process.env.LEVEL || 'info'
+}, process.stderr);
+// Register logkitx early so modules that call debug (e.g. mongoose/mquery)
+// don't trigger the "debug called before logkitx initialized" error.
+logkit(logger, {
+  levels: ['trace', 'error', 'fatal', 'info', 'warn', 'debug'],
+  format: 'logfmt'
+});
+
 // Use address from latest Truffle migration if available, else config
 function getContractAddress() {
 	const nets = artifacts.networks || {};
